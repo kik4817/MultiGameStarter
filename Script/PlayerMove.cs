@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,9 @@ public class PlayerMove : NetworkBehaviour
     public const string ChangeHasName = "IsChange";
 
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private Transform projectileTransform;
+
+    public Action<bool> FireAction; // 총을 발사했을 때(왼쪽 마우스, Spacebar)눌렀을 때 실제로 총을 쏘는 코드에게 남겨주기위함
 
     private void Awake()
     {
@@ -23,15 +27,51 @@ public class PlayerMove : NetworkBehaviour
         playerAction.Player.Enable();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner) { return; }
+
+        playerAction.Player.Fire.performed += OnFirePerformed;
+        playerAction.Player.Fire.canceled += OnFireCanceled;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (!IsOwner) { return; }
+
+        playerAction.Player.Fire.performed -= OnFirePerformed;
+        playerAction.Player.Fire.canceled -= OnFireCanceled;
+    }
+
+    private void OnFirePerformed(InputAction.CallbackContext context)
+    {
+        FireAction?.Invoke(true);
+    }
+
+    private void OnFireCanceled(InputAction.CallbackContext context)
+    {
+        FireAction?.Invoke(false);
+    }
+
     void Update()
     {
         // 내가 소유건을 가지고 있을때만 움직여라
         if (!IsOwner) { return; }
-        //if(IsServer) { }
-        //if(IsHost) { }
-
+        
         Move();
         HandleAnimation();
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsOwner) { return; }
+
+        Vector2 ScreenPos = playerAction.Player.Aim.ReadValue<Vector2>();
+        Vector2 WorldPos = Camera.main.ScreenToWorldPoint(ScreenPos);
+
+        projectileTransform.up = new Vector3(WorldPos.x - projectileTransform.position.x,
+            WorldPos.y - projectileTransform.position.y,
+            0);
     }
 
     private void HandleAnimation()
