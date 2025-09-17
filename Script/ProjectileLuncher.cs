@@ -1,7 +1,8 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
-public class ProjectileLuncher : MonoBehaviour
+public class ProjectileLuncher : NetworkBehaviour
 {
     private PlayerMove player;
     private bool shouldFire = false;
@@ -19,13 +20,17 @@ public class ProjectileLuncher : MonoBehaviour
         player = GetComponent<PlayerMove>();
     }
 
-    private void OnEnable()
+    public override void OnNetworkSpawn()   
     {
+        if (!IsOwner) { return; }
+
         player.FireAction += HandleFire;
     }
 
-    private void OnDisable()
+    public override void OnNetworkDespawn()
     {
+        if (!IsOwner) { return; }
+
         player.FireAction -= HandleFire;
     }
 
@@ -40,13 +45,44 @@ public class ProjectileLuncher : MonoBehaviour
 
         // 다음 발사 까지 남았는가? FireRate
         if (Time.time < (1 / fireRate) + previousFireTime) { return; }
-            
-        PrimaryFire(ProjectileLauncherTransform.position, ProjectileLauncherTransform.up);
+
+        // 투사체를 생성한다 서버에게 알려준다
+        FireServerRpc(ProjectileLauncherTransform.position, ProjectileLauncherTransform.up);
+
+        // 내 컴퓨터에서 내가 투사체를 발사했다.
+        SpawnDummyProjectile(ProjectileLauncherTransform.position, ProjectileLauncherTransform.up); 
 
         previousFireTime = Time.time;
     }
 
-    private void PrimaryFire(Vector3 position, Vector3 up)
+    [Rpc(SendTo.Server)]
+    private void FireServerRpc(Vector3 position, Vector3 up)
+    {
+        GameObject projectileInstance = 
+            Instantiate(serverProjectilePrefab, position, Quaternion.identity);
+
+        if (projectileInstance.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
+        {
+            rb.linearVelocity = up * ProjectileSpeed;
+        }
+
+        if(projectileInstance.TryGetComponent<DealDamageOnContact>(out DealDamageOnContact dealDamage))
+        {
+            dealDamage.SetOwner(OwnerClientId);
+        }
+
+        FireClientRpc(position, up);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void FireClientRpc(Vector3 position, Vector3 up)
+    {
+        if (IsOwner) { return; }
+
+        SpawnDummyProjectile(position, up);
+    }
+
+    private void SpawnDummyProjectile(Vector3 position, Vector3 up)
     {
         GameObject projectileInstance = 
             Instantiate(clientProjectilePrefab, position, Quaternion.identity);
