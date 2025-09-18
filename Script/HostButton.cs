@@ -8,10 +8,23 @@ using UnityEngine.UI;
 
 public class HostButton : NetworkBehaviour
 {
-    Button button;
+    Button button;    
 
     private void Awake()
     {
         button = GetComponent<Button>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (!IsHost) 
+        { 
+             button.gameObject.SetActive(false);
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        
     }
 }
