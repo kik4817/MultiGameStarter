@@ -100,7 +100,6 @@ GameObject:
   - component: {fileID: 7443345894252489993}
   - component: {fileID: 2305244986448573462}
   - component: {fileID: 9102497959425919756}
-  - component: {fileID: 8117492215321635748}
   m_Layer: 0
   m_Name: EnemyTank
   m_TagString: Untagged
@@ -238,17 +237,3 @@ MonoBehaviour:
   MaxHealth: 10
   CurrentHealth:
     m_InternalValue: 0
---- !u!114 &8117492215321635748
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5474099345926557795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b10af2d329db604418509fe584712533, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  health: {fileID: 9102497959425919756}

@@ -1,10 +1,13 @@
 using System;
+using Essence;
 using Unity.Netcode;
 using UnityEngine;
 
 public class Enemy : NetworkBehaviour
 {
     [SerializeField] Health health;
+
+    public Action<Enemy> OnMonsterSpawned;
 
     public override void OnNetworkSpawn()
     {
@@ -22,8 +25,12 @@ public class Enemy : NetworkBehaviour
 
         health.OnDie -= (health) => HandleEnemyDie();
     }
-    private void HandleEnemyDie()
+    protected virtual void HandleEnemyDie()
     {
-        Destroy(gameObject);
+        //Bus<IEnemyDeathEvent>
+        //OnMonsterSpawned?.Invoke(this);
+        NetworkManager.Destroy(gameObject);
     }
+
+    // protected virtual void HandleEnemyDie(Health health)
 }
